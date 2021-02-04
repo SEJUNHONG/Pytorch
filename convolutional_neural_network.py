@@ -4,7 +4,7 @@ import torch.optim as optim
 import torch.nn.init as init
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
-from torch.utils.data import dataloader
+from torch.utils.data import DataLoader
 from torchvision.transforms.functional import pad
 
 batch_size=256
@@ -41,53 +41,7 @@ class CNN(nn.Module):
         out=self.fc_layer(out)
         return out
 
-def conv_2_block(in_dim, out_dim):
-    model=nn.Sequential(
-        nn.Conv2d(in_dim, out_dim, kernel_size=3, padding=1),
-        nn.ReLU(),
-        nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1),
-        nn.ReLU(),
-        nn.MaxPool2d(2,2)
-    )
-    return model
-
-def conv_3_block(in_dim, out_dim):
-    model=nn.Sequential(
-        nn.Conv2d(in_dim, out_dim, kernel_size=3, padding=1),
-        nn.ReLU(),
-        nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1),
-        nn.ReLU(),
-        nn.Conv2d(out_dim, out_dim, kernel_size=3, padding=1),
-        nn.ReLU(),
-        nn.MaxPool2d(2,2)
-    )
-    return model
-
-class VGG(nn.Module):
-    def __init__(self, base_dim, num_classes=2):
-        super(VGG, self).__init__()
-        self.feature=nn.Sequential(
-            conv_2_block(3, base_dim),
-            conv_2_block(base_dim, 2*base_dim),
-            conv_3_block(2*base_dim, 4*base_dim),
-            conv_3_block(4*base_dim, 8*base_dim),
-            conv_3_block(8*base_dim, 8*base_dim),
-        )
-        self.fc_layer=nn.Sequential(
-            nn.Linear(8*base_dim*7*7, 100),
-            nn.ReLU(True),
-            nn.Linear(100,20),
-            nn.ReLU(True),
-            nn.Linear(20,num_classes),
-        )
-    
-    def forward(self, x):
-        x=self.feature(x)
-        x=x.view(x.size(0),-1)
-        x=self.fc_layer(x)
-        return x
-
-device=torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device=torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model=CNN().to(device)
 loss_func=nn.CrossEntropyLoss()
 optimizer=torch.optim.Adam(model.parameters(), lr=learning_rate)
@@ -104,7 +58,7 @@ for i in range(num_epoch):
         loss.backward()
         optimizer.step()
 
-        if j%100==0:
+        if j%1000==0:
             print(loss)
             loss_arr.append(loss.cpu().detach().numpy())
 
